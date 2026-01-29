@@ -1,0 +1,5 @@
+secret.key
+notes.bin
+__pycache__/
+*.pyc
+.idea/
