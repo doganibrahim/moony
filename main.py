@@ -90,6 +90,16 @@ class Notebook:
         except Exception as e:
             console.print(f'[bold red]error loading notes: {e}[/bold red]')
 
+def get_multiline_input():
+    console.print('[dim]enter note content below. type [bold white]!finish[/] on a new line to finish.[/dim]')
+    lines = []
+    while True:
+        line = input()
+        if line.strip() == '!finish':
+            break
+        lines.append(line)
+    return '\n'.join(lines)
+
 def main():
     notebook = Notebook()
 
@@ -111,7 +121,7 @@ def main():
 
         if choice == '1':
             title = input('enter note title: ')
-            content = input('enter note content: ')
+            content = get_multiline_input()
             notebook.add_note(title, content)
             console.print('[green]saved successfully![/green]')
         elif choice == '2':
