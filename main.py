@@ -8,6 +8,7 @@ from cryptography.fernet import Fernet
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
+from rich.markdown import Markdown
 
 console = Console()
 class SecurityManager:
@@ -89,7 +90,6 @@ class Note:
             'content': self.content,
             'created_at': self.created_at,
         }
-
 
 class Notebook:
     def __init__(self):
@@ -180,7 +180,8 @@ def main():
             found_note = next((n for n in notebook.notes if n.id == target_id), None)
 
             if found_note:
-                console.print(Panel(found_note.content, title=found_note.title))
+                md_content = Markdown(found_note.content)
+                console.print(Panel(md_content, title=found_note.title))
                 input('press enter to continue')
             else:
                 console.print('[red] note not found![/red]')
