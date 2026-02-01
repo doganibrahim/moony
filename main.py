@@ -4,6 +4,7 @@ import uuid
 import datetime
 import hashlib
 import sys
+import re
 from cryptography.fernet import Fernet
 from rich.console import Console
 from rich.table import Table
@@ -91,6 +92,22 @@ class Note:
             'created_at': self.created_at,
         }
 
+class TextFormatter:
+    @staticmethod
+    def parse(text):
+        #warning (red text)
+        text = re.sub(r'!w\{(.*?)}', r'[bold red]\1[/bold red]', text)
+
+        #info (green)
+        text = re.sub(r'!i\{(.*?)}', r'[bold green]\1[/bold green]', text)
+
+        #highlighted (yellow)
+        text = re.sub(r'!h\{(.*?)}', r'[black on yellow]\1[/]', text)
+
+        #note (blue)
+        text = re.sub(r'!n\{(.*?)}', r'[bold cyan]\1[/bold cyan]', text)
+
+        return text
 class Notebook:
     def __init__(self):
         self.notes = []
@@ -180,8 +197,9 @@ def main():
             found_note = next((n for n in notebook.notes if n.id == target_id), None)
 
             if found_note:
-                md_content = Markdown(found_note.content)
-                console.print(Panel(md_content, title=found_note.title))
+                formatted_title = TextFormatter().parse(found_note.title)
+                formatted_content = TextFormatter.parse(found_note.content)
+                console.print(Panel(formatted_content, title=formatted_title))
                 input('press enter to continue')
             else:
                 console.print('[red] note not found![/red]')
