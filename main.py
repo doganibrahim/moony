@@ -80,10 +80,11 @@ class UserManager:
                 console.print('[red]wrong password[/red]')
 
 class Note:
-    def __init__(self, title, content):
+    def __init__(self, title, content, tags = None):
         self.id = str(uuid.uuid4())[:8]
         self.title = title
         self.content = content
+        self.tags = tags if tags else []
         self.created_at = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
     def to_dict(self):
@@ -91,8 +92,17 @@ class Note:
             'id': self.id,
             'title': self.title,
             'content': self.content,
+            'tags': self.tags,
             'created_at': self.created_at,
         }
+
+    @staticmethod
+    def from_dict(d):
+        return Note(
+            d['title'],
+            d['content'],
+            d.get('tags', [])
+        )
 
 class TextFormatter:
     @staticmethod
@@ -117,8 +127,8 @@ class Notebook:
         self.security = SecurityManager()
         self.load_notes()
 
-    def add_note(self, title, content):
-        new_note = Note(title, content)
+    def add_note(self, title, content, tags = []):
+        new_note = Note(title, content, tags)
         self.notes.append(new_note)
         self.save_notes()
 
@@ -197,23 +207,26 @@ def main():
         table = Table(show_header=True, header_style="bold magenta")
         table.add_column('id', style='dim', width=12)
         table.add_column('title', min_width=20)
+        table.add_column('tags', style='bold yellow')
         table.add_column('date', style='green')
 
         # fill table
         for note in notebook.notes:
-            table.add_row(note.id, note.title, note.created_at)
+            tag_str = " ".join([f"[reverse] {t} [/]" for t in note.tags])
+            table.add_row(note.id, note.title, tag_str, note.created_at)
         console.print(table)
-        console.print('\n[1]add note  [2]read note [3]delete  [4]exit', style='bold yellow')
+        console.print('\n[1]add note [2]read note [3]delete [4]exit', style='bold yellow')
         choice = input('select action > ')
 
         if choice == '1':
             title = input('enter note title: ')
+            tags_input = input('enter tags (comma separated): ')
+            tags_list = [t.strip() for t in tags_input.split(",") if t.strip()]
             content = get_multiline_input()
-
             if content is None:
                 continue
 
-            notebook.add_note(title, content)
+            notebook.add_note(title, content, tags_list)
             console.print('[green]saved successfully![/green]')
         elif choice == '2':
             target_id = input('enter note id: ')
