@@ -9,7 +9,9 @@ from cryptography.fernet import Fernet
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
-from rich.markdown import Markdown
+from prompt_toolkit import prompt
+from prompt_toolkit.styles import Style
+from prompt_toolkit.key_binding import KeyBindings
 
 console = Console()
 class SecurityManager:
@@ -150,14 +152,31 @@ class Notebook:
             console.print(f'[bold red]error loading notes: {e}[/bold red]')
 
 def get_multiline_input():
-    console.print('[dim]enter note content below. type [bold white]!finish[/] on a new line to finish.[/dim]')
-    lines = []
-    while True:
-        line = input()
-        if line.strip() == '!finish':
-            break
-        lines.append(line)
-    return '\n'.join(lines)
+    console.print('[dim]enter note content below. press [bold]ENTER[/] for new line, [bold]CTRL + C[/] (or ESC then ENTER) to save.[/dim]')
+
+    editor_style = Style.from_dict({
+        'prompt': '#888'
+    })
+
+    kb = KeyBindings()
+    @kb.add('c-s')
+    def _(event):
+        'accept the input (save)'
+        event.app.exit(result=event.app.current_buffer.text)
+
+    try:
+        text = prompt(
+            '> ',
+            multiline=True,
+            style=editor_style,
+            key_bindings=kb,
+            bottom_toolbar=" [CTRL + S] save | [CTRL + C] cancel "
+        )
+        return text
+    except KeyboardInterrupt:
+        # handle [CTRL + C]
+        return None
+
 
 def main():
     user_manager = UserManager()
@@ -190,6 +209,10 @@ def main():
         if choice == '1':
             title = input('enter note title: ')
             content = get_multiline_input()
+
+            if content is None:
+                continue
+
             notebook.add_note(title, content)
             console.print('[green]saved successfully![/green]')
         elif choice == '2':
