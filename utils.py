@@ -25,8 +25,8 @@ class TextFormatter:
 
         return text
 
-def get_multiline_input():
-    console.print('[dim]enter note content below. press [bold]ENTER[/] for new line, [bold]CTRL + C[/] (or ESC then ENTER) to save.[/dim]')
+def get_multiline_input(initial_text=""):
+    console.print('[dim]enter note content below. press [bold]ENTER[/] for new line, [bold]CTRL + S[/] to save.[/dim]')
 
     editor_style = PromptStyle.from_dict({
         'prompt': '#888'
@@ -44,6 +44,7 @@ def get_multiline_input():
             multiline=True,
             style=editor_style,
             key_bindings=kb,
+            default=initial_text,
             bottom_toolbar=" [CTRL + S] save | [CTRL + C] cancel "
         )
         return text

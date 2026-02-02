@@ -48,7 +48,7 @@ def main():
             title = console.input("  title   › ")
             tags_input = console.input("  tags    › ")
             tags_list = [t.strip() for t in tags_input.split(",") if t.strip()]
-            console.print("  content › [dim](type :wq to finish)[/]\n")
+            console.print("  content › ")
             content = get_multiline_input()
             if content is None:
                 continue
@@ -61,17 +61,49 @@ def main():
             found_note = next((n for n in notebook.notes if n.id == target_id), None)
 
             if found_note:
-                console.clear()
-                formatted_title = TextFormatter().parse(found_note.title)
-                formatted_content = TextFormatter.parse(found_note.content)
-                tag_display = " ".join([f"[dim cyan]#{t}[/]" for t in found_note.tags]) if found_note.tags else ""
-                
-                console.print(f"\n  [bold white]{formatted_title}[/]")
-                if tag_display:
-                    console.print(f"  {tag_display}")
-                console.print(f"  [dim white]{found_note.created_at}[/]\n")
-                console.print("  " + formatted_content.replace("\n", "\n  "))
-                console.input("\n\n  [dim]press enter...[/]")
+                while True:
+                    console.clear()
+                    formatted_title = TextFormatter().parse(found_note.title)
+                    formatted_content = TextFormatter.parse(found_note.content)
+                    tag_display = " ".join([f"[dim cyan]#{t}[/]" for t in found_note.tags]) if found_note.tags else ""
+                    
+                    console.print(f"\n  [bold white]{formatted_title}[/]")
+                    if tag_display:
+                        console.print(f"  {tag_display}")
+                    console.print(f"  [dim white]{found_note.created_at}[/]\n")
+                    console.print("  " + formatted_content.replace("\n", "\n  "))
+                    
+                    console.print("\n\n  [dim white]e[/] edit  [dim white]enter[/] back")
+                    action = console.input("\n  › ")
+                    
+                    if action.lower() == 'e':
+                        console.clear()
+                        console.print("\n  [white]EDIT NOTE[/]\n")
+                        console.print(f"  [dim]current: {found_note.title}[/]")
+                        new_title = console.input("  title   › ")
+                        if not new_title.strip():
+                            new_title = found_note.title
+                        
+                        current_tags = ",".join(found_note.tags) if found_note.tags else ""
+                        console.print(f"  [dim]current: {current_tags if current_tags else '(none)'}[/]")
+                        new_tags_input = console.input("  tags    › ")
+                        if not new_tags_input.strip():
+                            new_tags = found_note.tags
+                        else:
+                            new_tags = [t.strip() for t in new_tags_input.split(",") if t.strip()]
+                        
+                        console.print("\n  [white]content[/] [dim](edit below, CTRL + S to save)[/]\n")
+                        new_content = get_multiline_input(found_note.content)
+                        
+                        if new_content is not None:
+                            notebook.edit_note(target_id, new_title, new_content, new_tags)
+                            found_note.title = new_title
+                            found_note.content = new_content
+                            found_note.tags = new_tags
+                            console.print("\n  [dim green]✓ updated[/]")
+                            console.input("\n  [dim]press enter...[/]")
+                    else:
+                        break
             else:
                 console.print("\n  [dim red]not found[/]")
                 console.input("\n  [dim]press enter...[/]")

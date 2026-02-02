@@ -46,6 +46,16 @@ class Notebook:
         self.notes = [note for note in self.notes if note.id != note_id]
         self.save_notes()
 
+    def edit_note(self, note_id, new_title, new_content, new_tags):
+        for note in self.notes:
+            if note.id == note_id:
+                note.title = new_title
+                note.content = new_content
+                note.tags = new_tags
+                self.save_notes()
+                return True
+        return False
+
     def save_notes(self):
         # convert Note objects to list of dicts
         data_to_save = [note.to_dict() for note in self.notes]
