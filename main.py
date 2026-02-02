@@ -1,192 +1,11 @@
-import json
-import os
-import uuid
-import datetime
-import hashlib
 import sys
-import re
-from cryptography.fernet import Fernet
-from rich.console import Console
+
 from rich.table import Table
 from rich.panel import Panel
-from prompt_toolkit import prompt
-from prompt_toolkit.styles import Style
-from prompt_toolkit.key_binding import KeyBindings
-
-console = Console()
-class SecurityManager:
-    def __init__(self):
-        self.key_file = 'secret.key'
-        self.key = None
-
-        #check if key file exists
-        if os.path.exists(self.key_file):
-            with open(self.key_file, 'rb') as f:
-                self.key = f.read()
-        else:
-            #generate new key
-            self.key = Fernet.generate_key()
-            with open(self.key_file, 'wb') as f:
-                f.write(self.key)
-
-    def encrypt(self, plain_text):
-        f = Fernet(self.key)
-        #convert string to bytes, then encrypt
-        return f.encrypt(plain_text.encode())
-
-    def decrypt(self, cipher_text):
-        f = Fernet(self.key)
-        return f.decrypt(cipher_text).decode()
-
-class UserManager:
-    def __init__(self):
-        self.lock_file = 'user.lock'
-
-    def get_hash(self, password):
-        return hashlib.sha256(password.encode()).hexdigest()
-
-    def is_registered(self):
-        return os.path.exists(self.lock_file)
-
-    def register(self):
-        console.print(Panel('[bold yellow] set password [/bold yellow]'))
-        while True:
-            pwd = console.input('password: ')
-            pwd_again = console.input('password again: ')
-
-            if pwd == pwd_again and len(pwd) > 0:
-                hashed_pwd = self.get_hash(pwd)
-                with open(self.lock_file, 'w') as f:
-                    f.write(hashed_pwd)
-                console.print('[green]successfully registered[/green]')
-                return True
-            else:
-                console.print('[red]passwords do not match or blank[/red]')
-
-    def login(self):
-        with open(self.lock_file, 'r') as f:
-            stored_hash = f.read().strip()
-        while True:
-            console.print('[bold cyan]login[/bold cyan]')
-            console.print('[dim](type [bold white]!exit[/bold white] to exit)[/dim]')
-            entered_pwd = console.input('password: ')
-
-            if self.get_hash(entered_pwd) == stored_hash:
-                console.print('[green]successfully logged in[/green]')
-                return True
-            elif entered_pwd.strip() == '!exit':
-                sys.exit()
-            else:
-                console.print('[red]wrong password[/red]')
-
-class Note:
-    def __init__(self, title, content, tags = None):
-        self.id = str(uuid.uuid4())[:8]
-        self.title = title
-        self.content = content
-        self.tags = tags if tags else []
-        self.created_at = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'title': self.title,
-            'content': self.content,
-            'tags': self.tags,
-            'created_at': self.created_at,
-        }
-
-    @staticmethod
-    def from_dict(d):
-        return Note(
-            d['title'],
-            d['content'],
-            d.get('tags', [])
-        )
-
-class TextFormatter:
-    @staticmethod
-    def parse(text):
-        #warning (red text)
-        text = re.sub(r'!w\{(.*?)}', r'[bold red]\1[/bold red]', text)
-
-        #info (green)
-        text = re.sub(r'!i\{(.*?)}', r'[bold green]\1[/bold green]', text)
-
-        #highlighted (yellow)
-        text = re.sub(r'!h\{(.*?)}', r'[black on yellow]\1[/]', text)
-
-        #note (blue)
-        text = re.sub(r'!n\{(.*?)}', r'[bold cyan]\1[/bold cyan]', text)
-
-        return text
-class Notebook:
-    def __init__(self):
-        self.notes = []
-        self.file_name = 'notes.bin'
-        self.security = SecurityManager()
-        self.load_notes()
-
-    def add_note(self, title, content, tags = []):
-        new_note = Note(title, content, tags)
-        self.notes.append(new_note)
-        self.save_notes()
-
-    def del_note(self, note_id):
-        self.notes = [note for note in self.notes if note.id != note_id]
-        self.save_notes()
-
-    def save_notes(self):
-        # convert Note objects to list of dicts
-        data_to_save = [note.to_dict() for note in self.notes]
-        json_str = json.dumps(data_to_save)
-        encrypted_data = self.security.encrypt(json_str)
-        with open(self.file_name, 'wb') as f:
-            f.write(encrypted_data)
-
-    def load_notes(self):
-        if not os.path.exists(self.file_name):
-            return
-        with open(self.file_name, 'rb') as f:
-            encrypted_data = f.read()
-        try:
-            json_str = self.security.decrypt(encrypted_data)
-            notes_data = json.loads(json_str)
-            self.notes = []
-            for datum in notes_data:
-                note = Note(datum['title'], datum['content'])
-                note.id = datum['id']
-                note.created_at = datum['created_at']
-                self.notes.append(note)
-        except Exception as e:
-            console.print(f'[bold red]error loading notes: {e}[/bold red]')
-
-def get_multiline_input():
-    console.print('[dim]enter note content below. press [bold]ENTER[/] for new line, [bold]CTRL + C[/] (or ESC then ENTER) to save.[/dim]')
-
-    editor_style = Style.from_dict({
-        'prompt': '#888'
-    })
-
-    kb = KeyBindings()
-    @kb.add('c-s')
-    def _(event):
-        'accept the input (save)'
-        event.app.exit(result=event.app.current_buffer.text)
-
-    try:
-        text = prompt(
-            '> ',
-            multiline=True,
-            style=editor_style,
-            key_bindings=kb,
-            bottom_toolbar=" [CTRL + S] save | [CTRL + C] cancel "
-        )
-        return text
-    except KeyboardInterrupt:
-        # handle [CTRL + C]
-        return None
-
+from rich import box
+from utils import console, TextFormatter, get_multiline_input
+from models import Notebook
+from auth import UserManager
 
 def main():
     user_manager = UserManager()
@@ -196,8 +15,8 @@ def main():
         user_manager.register()
 
     if not user_manager.login():
-        user_manager.login()
-
+        console.print("[bold red]⛔ access denied.[/bold red]")
+        sys.exit()
     notebook = Notebook()
 
     while True:
