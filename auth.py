@@ -1,7 +1,6 @@
 import hashlib
 import os
 import sys
-import time
 from rich.panel import Panel
 from utils import console
 

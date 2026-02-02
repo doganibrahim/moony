@@ -1,8 +1,6 @@
 import sys
-
 from rich.table import Table
 from rich.panel import Panel
-from rich import box
 from utils import console, TextFormatter, get_multiline_input
 from models import Notebook
 from auth import UserManager
@@ -34,7 +32,7 @@ def main():
             tag_str = " ".join([f"[reverse] {t} [/]" for t in note.tags])
             table.add_row(note.id, note.title, tag_str, note.created_at)
         console.print(table)
-        console.print('\n[1]add note [2]read note [3]delete [4]exit', style='bold yellow')
+        console.print('\n[1]add note [2]read note [3]delete [4]search [5]exit', style='bold yellow')
         choice = input('select action > ')
 
         if choice == '1':
@@ -64,6 +62,41 @@ def main():
             notebook.del_note(target_id)
 
         elif choice == '4':
+            console.clear()
+            search_query = input('enter search term (title/content/tags): ').lower()
+            
+            if not search_query:
+                console.print('[yellow]search term cannot be empty[/yellow]')
+                input('press enter to continue')
+                continue
+
+            results = [
+                note for note in notebook.notes
+                if search_query in note.title.lower() or
+                   search_query in note.content.lower() or
+                   any(search_query in tag.lower() for tag in note.tags)
+            ]
+
+            if results:
+                console.print(f'\n[green]found {len(results)} result(s):[/green]\n')
+                
+                search_table = Table(show_header=True, header_style="bold magenta")
+                search_table.add_column('id', style='dim', width=12)
+                search_table.add_column('title', min_width=20)
+                search_table.add_column('tags', style='bold yellow')
+                search_table.add_column('date', style='green')
+
+                for note in results:
+                    tag_str = " ".join([f"[reverse] {t} [/]" for t in note.tags])
+                    search_table.add_row(note.id, note.title, tag_str, note.created_at)
+                
+                console.print(search_table)
+            else:
+                console.print('[red]no results found[/red]')
+            
+            input('\npress enter to continue')
+
+        elif choice == '5':
             break
 
 if __name__ == '__main__':

@@ -2,7 +2,7 @@ import json
 import os
 import uuid
 from datetime import datetime
-from utils import console, TextFormatter, SecurityManager
+from utils import console, SecurityManager
 
 
 class Note:
