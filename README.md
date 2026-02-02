@@ -18,7 +18,7 @@ minimalist encrypted note-taking app
 ### note list
 ![Note List](screenshots/note_list.png)
 
-### reading & editing
+### reading
 ![Note View](screenshots/read.png)
 
 ### search
