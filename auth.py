@@ -15,32 +15,36 @@ class UserManager:
         return os.path.exists(self.lock_file)
 
     def register(self):
-        console.print(Panel('[bold yellow] set password [/bold yellow]'))
+        console.clear()
+        console.print("\n  [white]SETUP[/]\n")
         while True:
-            pwd = console.input('password: ')
-            pwd_again = console.input('password again: ')
+            pwd = console.input('  password › ', password=True)
+            pwd_again = console.input('  confirm  › ', password=True)
 
             if pwd == pwd_again and len(pwd) > 0:
                 hashed_pwd = self.get_hash(pwd)
                 with open(self.lock_file, 'w') as f:
                     f.write(hashed_pwd)
-                console.print('[green]successfully registered[/green]')
+                console.print('\n  [dim green]✓ registered[/]')
+                console.input('\n  [dim]press enter...[/]')
                 return True
             else:
-                console.print('[red]passwords do not match or blank[/red]')
+                console.print('\n  [dim red]mismatch[/]\n')
 
     def login(self):
         with open(self.lock_file, 'r') as f:
             stored_hash = f.read().strip()
+        console.clear()
         while True:
-            console.print('[bold cyan]login[/bold cyan]')
-            console.print('[dim](type [bold white]!exit[/bold white] to exit)[/dim]')
-            entered_pwd = console.input('password: ')
+            console.print("\n  [white]LOGIN[/]\n")
+            console.print('  [dim]type !exit to quit[/]\n')
+            entered_pwd = console.input('  password › ', password=True)
 
             if self.get_hash(entered_pwd) == stored_hash:
-                console.print('[green]successfully logged in[/green]')
+                console.print('\n  [dim green]✓ access granted[/]')
+                console.input('\n  [dim]press enter...[/]')
                 return True
             elif entered_pwd.strip() == '!exit':
                 sys.exit()
             else:
-                console.print('[red]wrong password[/red]')
+                console.print('\n  [dim red]incorrect[/]\n')
